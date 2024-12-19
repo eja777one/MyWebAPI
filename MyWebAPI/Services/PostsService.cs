@@ -23,7 +23,7 @@ namespace MyWebAPI.Services
 
             if (blog is null) return null;
 
-            return await _postsRepository.AddPost(new(dto));
+            return await _postsRepository.AddPost(new(dto, blog.Name));
         }
 
         public async Task<bool> UpdatePost(int id, InputPostDto dto)
@@ -33,7 +33,7 @@ namespace MyWebAPI.Services
 
             if (post == null || blog == null) return false;
 
-            post.Update(dto);
+            post.Update(dto, blog.Name);
 
             return await _postsRepository.SaveChanges();
         }

@@ -47,6 +47,8 @@ namespace MyWebApiTests
         public async Task Test02_CreatePost()
         {
             // Arrange
+            var createdTime = DateTime.UtcNow;
+
             var inputBlogDto = TestData.GetCorrectInputBlogDto();
             var requestMessage1 = TestData.GetAuthorizedMessage(HttpMethod.Post, _blogsAbsUrl, inputBlogDto);
 
@@ -67,6 +69,9 @@ namespace MyWebApiTests
             var httpResponse4 = await _client.SendAsync(requestMessage4);
             var post = await httpResponse4.Content.ReadFromJsonAsync<Post>();
 
+            var timeDiff = post?.CreatedAt - createdTime;
+            var isLessThan2Min = timeDiff?.Minutes < 2;
+
             var httpResponse5 = await _client.GetAsync($"{_postsRelUrl}{post?.Id}");
             var postDb = await httpResponse5.Content.ReadFromJsonAsync<Post>();
 
@@ -80,6 +85,7 @@ namespace MyWebApiTests
             Assert.Equal(inputPostDto.Content, post?.Content);
             Assert.Equal(inputPostDto.ShortDescription, post?.ShortDescription);
             Assert.Equal(inputPostDto.BlogId, post?.BlogId);
+            Assert.Equal(true, isLessThan2Min);
 
             Assert.Equal(HttpStatusCode.OK, httpResponse5?.StatusCode);
             Assert.Equal(inputPostDto.Title, postDb?.Title);

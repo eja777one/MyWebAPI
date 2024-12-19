@@ -48,6 +48,8 @@ namespace MyWebApiTests
         public async Task Test02_CreateBlog()
         {
             // Arrange
+            var createdTime = DateTime.UtcNow;
+
             var inputBlogDto = TestData.GetCorrectInputBlogDto();
             var badInputBlogDto = TestData.GetIncorrectInputBlogDto();
 
@@ -62,6 +64,9 @@ namespace MyWebApiTests
             var httpResponse3 = await _client.SendAsync(requestMessage2);
             var blog = await httpResponse3.Content.ReadFromJsonAsync<Blog>();
 
+            var timeDiff = blog?.CreatedAt - createdTime;
+            var isLessThan2Min = timeDiff?.Minutes < 2;
+
             var httpResponse4 = await _client.GetAsync($"{_blogsRelUrl}{blog?.Id}");
             var blogDb = await httpResponse4.Content.ReadFromJsonAsync<Blog>();
 
@@ -74,6 +79,7 @@ namespace MyWebApiTests
             Assert.Equal(inputBlogDto.Name, blog?.Name);
             Assert.Equal(inputBlogDto.Description, blog?.Description);
             Assert.Equal(inputBlogDto.WebsiteUrl, blog?.WebsiteUrl);
+            Assert.Equal(true, isLessThan2Min);
 
             Assert.Equal(HttpStatusCode.OK, httpResponse4?.StatusCode);
             Assert.Equal(inputBlogDto.Name, blogDb?.Name);

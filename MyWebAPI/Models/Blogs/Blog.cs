@@ -1,5 +1,4 @@
 ﻿using MyWebAPI.Dto.Blogs;
-using MyWebAPI.Models.Posts;
 
 namespace MyWebAPI.Models.Blogs
 {
@@ -9,6 +8,8 @@ namespace MyWebAPI.Models.Blogs
         public string Name { get; set; } = null!;
         public string Description { get; set; } = null!;
         public string WebsiteUrl { get; set; } = null!;
+        public DateTime CreatedAt { get; set; }
+        public bool IsMembership { get; set; }
 
         public Blog()
         {
@@ -18,6 +19,7 @@ namespace MyWebAPI.Models.Blogs
         public Blog(InputBlogDto dto)
         {
             Update(dto);
+            CreatedAt = DateTime.UtcNow;
         }
 
         public void Update(InputBlogDto dto)
