@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Web.Http.Controllers;
-using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace MyWebAPI.Attributes
 {

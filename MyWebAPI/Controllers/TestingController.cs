@@ -7,10 +7,15 @@ namespace MyWebAPI.Controllers
     public class TestingController : ControllerBase
     {
         private readonly IVideoRepository _videoRepository;
+        private readonly IBlogsRepository _blogsRepository;
+        private readonly IPostsRepository _postsRepository;
 
-        public TestingController(IVideoRepository videoRepository)
+        public TestingController(IVideoRepository videoRepository, IBlogsRepository blogsRepository,
+            IPostsRepository postsRepository)
         {
             _videoRepository = videoRepository;
+            _blogsRepository = blogsRepository;
+            _postsRepository = postsRepository;
         }
 
         /// <summary>Clear DB</summary>
@@ -21,6 +26,9 @@ namespace MyWebAPI.Controllers
         public async Task<IResult> DeleteAllVideos()
         {
             await _videoRepository.DeleteAllVideos();
+            await _blogsRepository.DeleteAllBlogs();
+            await _postsRepository.DeleteAllPosts();
+
             return TypedResults.NoContent();
         }
     }

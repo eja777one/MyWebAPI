@@ -1,8 +1,13 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using MyWebAPI.Attributes;
 using MyWebAPI.Data;
+using MyWebAPI.Filters;
+using MyWebAPI.Middlewares;
 using MyWebAPI.Repositories;
 using MyWebAPI.Repositories.Interfaces;
 using MyWebAPI.Services;
@@ -25,10 +30,14 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); // dateTime 
 
 #endregion
 
-builder.Services.AddControllers(config =>
-{
-    config.Filters.Add<ValidateModelAttribute>();
-});
+builder.Services.AddControllers()
+    .AddJsonOptions(config =>
+    {
+        //config.JsonSerializerOptions.PropertyNamingPolicy = null;
+        //config.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+        config.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        //config.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -56,11 +65,30 @@ builder.Services.AddSwaggerGen(options =>
     // using System.Reflection;
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
+    options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid value",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Basic"
+    });
+
+    options.OperationFilter<AuthorizeCheckOperationFilter>();
 });
 
 builder.Services.AddTransient<IVideoService, VideoService>();
 builder.Services.AddTransient<IVideoRepository, VideoRepository>();
+builder.Services.AddTransient<IBlogsService, BlogsService>();
+builder.Services.AddTransient<IBlogsRepository, BlogsRepository>();
+builder.Services.AddTransient<IPostsService, PostsService>();
+builder.Services.AddTransient<IPostsRepository, PostsRepository>();
+builder.Services.AddSingleton<IBasicAuthService, BasicAuthService>();
 
+
+builder.Services.AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", null);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

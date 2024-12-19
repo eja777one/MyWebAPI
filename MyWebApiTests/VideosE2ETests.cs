@@ -9,15 +9,12 @@ using Newtonsoft.Json;
 
 namespace MyWebApiTests
 {
-    [CollectionDefinition("Videos")]
-    public class SharedTestCollection : ICollectionFixture<CustomWebApplicationFactory>;
-
     [Collection("Videos")]
-    public class IntegrationTests : IAsyncLifetime
+    public class VideosE2ETests : IAsyncLifetime
     {
         private readonly CustomWebApplicationFactory _factory;
 
-        public IntegrationTests(CustomWebApplicationFactory factory)
+        public VideosE2ETests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
         }

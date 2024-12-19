@@ -21,10 +21,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Data\Migrations\" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<InternalsVisibleTo Include="MyWebAPI" />
 	</ItemGroup>
 	
