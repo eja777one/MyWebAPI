@@ -2,8 +2,10 @@
 using System.Net;
 using MyWebAPI.Models.Blogs;
 using MyWebAPI.Models.Posts;
+using MyWebAPI.Dto;
+using MyWebAPI.Dto.Posts;
 
-namespace MyWebApiTests
+namespace MyWebApiTests.E2e
 {
     [Collection("Posts")]
     public class PostsE2ETests : IAsyncLifetime
@@ -17,6 +19,9 @@ namespace MyWebApiTests
         private string _blogsAbsUrl = "";
         private readonly string _blogsRelUrl = "/blogs/";
 
+        private string _testingAbsUrl = "";
+        private readonly string _testingRelUrl = "/testing/";
+
         public PostsE2ETests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
@@ -24,6 +29,7 @@ namespace MyWebApiTests
             _client.BaseAddress = new Uri("https://localhost");
             _postsAbsUrl = $"{_client.BaseAddress}{_postsRelUrl.Substring(1)}";
             _blogsAbsUrl = $"{_client.BaseAddress}{_blogsRelUrl.Substring(1)}";
+            _testingAbsUrl = $"{_client.BaseAddress}{_testingRelUrl.Substring(1)}";
         }
 
         public Task InitializeAsync() => Task.CompletedTask;
@@ -33,14 +39,72 @@ namespace MyWebApiTests
         public async Task Test01_GetPosts()
         {
             // Arrange
+            var inputBlogDto = TestData.GetCorrectInputBlogDto();
+            var requestMessage1 = TestData.GetAuthorizedMessage(HttpMethod.Post, _blogsAbsUrl, inputBlogDto);
+
+            var httpResponse1 = await _client.SendAsync(requestMessage1);
+            var blog = await httpResponse1.Content.ReadFromJsonAsync<Blog>();
+
+            var new20Posts = TestData.GetPosts(20, blog!.Id, blog!.Name);
+            var requestMessage2 = TestData.GetAuthorizedMessage(HttpMethod.Post, $"{_testingAbsUrl}Posts", new20Posts);
+            var httpResponse2 = await _client.SendAsync(requestMessage2);
+
+            var getPostsQuery1 = new GetPostsQueryDto("Title", "asc", 3, 2);
+            var getPostsQuery2 = new GetPostsQueryDto("ShortDescription", "desc", 2, 5);
+
+            var firstReqPosts = new20Posts.OrderBy(x => x.Title).ToList();
+
+            var firstPostsCount = firstReqPosts.Count;
+            var firstPagesCount = PaginatorDto<Post>.GetPagesTotalCount(firstPostsCount, getPostsQuery1.PageSize);
+
+            firstReqPosts = firstReqPosts
+               .Skip((getPostsQuery1.PageNumber - 1) * getPostsQuery1.PageSize)
+               .Take(getPostsQuery1.PageSize)
+               .ToList();
+
+            var secondReqPosts = new20Posts.OrderByDescending(x => x.ShortDescription).ToList();
+
+            var secondPostsCount = secondReqPosts.Count;
+            var secondPagesCount = PaginatorDto<Post>.GetPagesTotalCount(secondPostsCount, getPostsQuery2.PageSize);
+
+            secondReqPosts = secondReqPosts
+               .Skip((getPostsQuery2.PageNumber - 1) * getPostsQuery2.PageSize)
+               .Take(getPostsQuery2.PageSize)
+               .ToList();
 
             // Act
-            var httpResponse = await _client.GetAsync(_postsRelUrl);
-            var posts = await httpResponse.Content.ReadFromJsonAsync<Post[]>();
+            var httpResponse3 = await _client.GetAsync($"{_postsAbsUrl.Substring(1)}?pageSize={getPostsQuery1.PageSize}&pageNumber={getPostsQuery1.PageNumber}&sortBy={getPostsQuery1.SortBy}&sortDirection={getPostsQuery1.SortDirection}");
+            var paginatorPosts3 = await httpResponse3.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
+
+            var httpResponse4 = await _client.GetAsync($"{_postsAbsUrl.Substring(1)}?pageSize={getPostsQuery2.PageSize}&pageNumber={getPostsQuery2.PageNumber}&sortBy={getPostsQuery2.SortBy}");
+            var paginatorPosts4 = await httpResponse4.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, httpResponse?.StatusCode);
-            Assert.Equal(0, posts?.Length);
+            Assert.Equal(HttpStatusCode.Created, httpResponse1?.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, httpResponse2?.StatusCode);
+
+            Assert.Equal(HttpStatusCode.OK, httpResponse3?.StatusCode);
+            Assert.Equal(firstPagesCount, paginatorPosts3?.PagesCount);
+            Assert.Equal(getPostsQuery1.PageNumber, paginatorPosts3?.Page);
+            Assert.Equal(getPostsQuery1.PageSize, paginatorPosts3?.PageSize);
+            Assert.Equal(firstPostsCount, paginatorPosts3?.TotalCount);
+
+            Assert.Equal(firstReqPosts.Count, paginatorPosts3?.Items.Count);
+            Assert.Equal(firstReqPosts.Last().Title, paginatorPosts3?.Items.Last().Title);
+            Assert.Equal(firstReqPosts.Last().Content, paginatorPosts3?.Items.Last().Content);
+            Assert.Equal(firstReqPosts.Last().ShortDescription, paginatorPosts3?.Items.Last().ShortDescription);
+            Assert.Equal(firstReqPosts.Last().BlogId, paginatorPosts3?.Items.Last().BlogId);
+
+            Assert.Equal(HttpStatusCode.OK, httpResponse4?.StatusCode);
+            Assert.Equal(secondPagesCount, paginatorPosts4?.PagesCount);
+            Assert.Equal(getPostsQuery2.PageNumber, paginatorPosts4?.Page);
+            Assert.Equal(getPostsQuery2.PageSize, paginatorPosts4?.PageSize);
+            Assert.Equal(secondPostsCount, paginatorPosts4?.TotalCount);
+
+            Assert.Equal(secondReqPosts.Last().Title, paginatorPosts4?.Items.Last().Title);
+            Assert.Equal(secondReqPosts.Last().Content, paginatorPosts4?.Items.Last().Content);
+            Assert.Equal(secondReqPosts.Last().ShortDescription, paginatorPosts4?.Items.Last().ShortDescription);
+            Assert.Equal(secondReqPosts.Last().BlogId, paginatorPosts4?.Items.Last().BlogId);
         }
 
         [Fact]
@@ -85,7 +149,7 @@ namespace MyWebApiTests
             Assert.Equal(inputPostDto.Content, post?.Content);
             Assert.Equal(inputPostDto.ShortDescription, post?.ShortDescription);
             Assert.Equal(inputPostDto.BlogId, post?.BlogId);
-            Assert.Equal(true, isLessThan2Min);
+            Assert.True(isLessThan2Min);
 
             Assert.Equal(HttpStatusCode.OK, httpResponse5?.StatusCode);
             Assert.Equal(inputPostDto.Title, postDb?.Title);

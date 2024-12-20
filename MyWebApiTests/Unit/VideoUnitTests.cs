@@ -2,7 +2,7 @@
 using MyWebAPI.Models.Video;
 using Assert = Xunit.Assert;
 
-namespace MyWebApiTests
+namespace MyWebApiTests.Unit
 {
     public class VideoUnitTests
     {

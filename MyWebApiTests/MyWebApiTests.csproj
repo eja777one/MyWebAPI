@@ -36,4 +36,8 @@
 		<InternalsVisibleTo Include="MyWebAPI" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Integration\" />
+	</ItemGroup>
+
 </Project>

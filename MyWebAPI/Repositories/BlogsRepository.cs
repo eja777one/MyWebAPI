@@ -1,6 +1,8 @@
-﻿using System.Reflection.Metadata;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MyWebAPI.Data;
+using MyWebAPI.Dto;
+using MyWebAPI.Dto.Blogs;
+using MyWebAPI.Extensions;
 using MyWebAPI.Models.Blogs;
 using MyWebAPI.Models.Posts;
 using MyWebAPI.Repositories.Interfaces;
@@ -66,10 +68,14 @@ namespace MyWebAPI.Repositories
             return await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
         }
 
-        public async Task<List<Blog>> GetBlogs()
+        public async Task<PaginatorDto<Blog>> GetBlogs(GetBlogsQueryDto dto)
         {
-            var blogs = await _context.Blogs.ToListAsync();
-            return blogs;
+            var blogs = await _context.Blogs
+                .Where(x => x.Name.Contains(dto.SearchNameTerm))
+                .OrderByColumn(dto.SortBy, dto.SortDirection)                
+                .ToListAsync();
+
+            return new PaginatorDto<Blog>(blogs, dto);
         }
 
         public async Task<bool> SaveChanges()
@@ -80,6 +86,17 @@ namespace MyWebAPI.Repositories
                 return true;
             }
             catch (Exception ex) { return false; }
+        }
+
+        public async Task<List<Blog>?> AddBlogs(List<Blog> blogs)
+        {
+            try
+            {
+                await _context.AddRangeAsync(blogs);
+                await _context.SaveChangesAsync();
+                return blogs;
+            }
+            catch (Exception ex) { return null; }
         }
     }
 }

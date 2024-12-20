@@ -20,10 +20,15 @@ namespace MyWebAPI.Services
         public async Task<Post?> AddPost(InputPostDto dto)
         {
             var blog = await _blogsRepository.GetBlog((int)dto.BlogId);
-
             if (blog is null) return null;
 
             return await _postsRepository.AddPost(new(dto, blog.Name));
+        }
+
+        public async Task<Post?> AddPostForBlog(int blogId, InputBlogPostDto dto)
+        {
+            var inputPostDto = new InputPostDto(dto.Title, dto.ShortDescription, dto.Content, blogId);
+            return await AddPost(inputPostDto);
         }
 
         public async Task<bool> UpdatePost(int id, InputPostDto dto)

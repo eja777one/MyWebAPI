@@ -7,7 +7,7 @@ using MyWebAPI.Dto.Video;
 using MyWebAPI.Models.Video;
 using Newtonsoft.Json;
 
-namespace MyWebApiTests
+namespace MyWebApiTests.E2e
 {
     [Collection("Videos")]
     public class VideosE2ETests : IAsyncLifetime

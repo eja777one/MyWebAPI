@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using MyWebAPI.Data;
+using MyWebAPI.Dto;
+using MyWebAPI.Dto.Posts;
+using MyWebAPI.Extensions;
 using MyWebAPI.Models.Blogs;
 using MyWebAPI.Models.Posts;
 using MyWebAPI.Repositories.Interfaces;
@@ -29,11 +33,6 @@ namespace MyWebAPI.Repositories
         public async Task<Post?> GetPost(int id)
         {
             return await _context.Posts.FirstOrDefaultAsync(b => b.Id == id);
-        }
-
-        public async Task<List<Post>> GetPosts()
-        {
-            return await _context.Posts.ToListAsync() ?? new();
         }
 
         public async Task<bool> SaveChanges()
@@ -69,6 +68,40 @@ namespace MyWebAPI.Repositories
                 return true;
             }
             catch (Exception ex) { return false; }
+        }
+
+        public async Task<PaginatorDto<Post>> GetPosts(GetPostsQueryDto dto)
+        {
+            var posts = await _context.Posts
+                .OrderByColumn(dto.SortBy, dto.SortDirection)
+                .ToListAsync();
+
+            return new PaginatorDto<Post>(posts, dto);
+        }
+
+        public async Task<PaginatorDto<Post>?> GetPostsForBlog(int blogId, GetPostsQueryDto dto)
+        {
+            var blog = await _context.Blogs.FirstOrDefaultAsync(x => x.Id == blogId);
+            if (blog is null) return null;
+
+            var posts = await _context.Posts
+                .Where(x => x.BlogId == blogId)
+                .OrderByColumn(dto.SortBy, dto.SortDirection)
+                .ToListAsync();
+
+            return new PaginatorDto<Post>(posts, dto);
+        }
+
+        public async Task<List<Post>?> AddPosts(List<Post> posts)
+        {
+            try
+            {
+                await _context.AddRangeAsync(posts);
+                await _context.SaveChangesAsync();
+                return posts;
+            }
+            catch (Exception ex) { return null; }
+
         }
     }
 }

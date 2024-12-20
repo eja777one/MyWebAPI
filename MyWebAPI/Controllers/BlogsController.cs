@@ -5,6 +5,8 @@ using MyWebAPI.Models.Blogs;
 using MyWebAPI.Repositories.Interfaces;
 using MyWebAPI.Services.Interfaces;
 using MyWebAPI.Dto.Blogs;
+using MyWebAPI.Dto.Posts;
+using MyWebAPI.Models.Posts;
 
 namespace MyWebAPI.Controllers
 {
@@ -14,19 +16,32 @@ namespace MyWebAPI.Controllers
     {
         private readonly IBlogsService _blogsService;
         private readonly IBlogsRepository _blogsRepository;
+        private readonly IPostsRepository _postsRepository;
+        private readonly IPostsService _postsService;
 
-        public BlogsController(IBlogsService blogsService, IBlogsRepository blogsRepository)
+        public BlogsController(IBlogsService blogsService, IBlogsRepository blogsRepository,
+            IPostsRepository postsRepository, IPostsService postsService)
         {
             _blogsService = blogsService;
             _blogsRepository = blogsRepository;
+            _postsRepository = postsRepository;
+            _postsService = postsService;
         }
 
         /// <summary>Returns all blogs</summary>
+        /// <param name="searchNameTerm">Search term for blog Name: Name should contains this term in any position</param>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDirection"></param>
+        /// <param name="pageNumber">pageNumber is number of portions that should be returned</param>
+        /// <param name="pageSize">pageSize is portions size that should be returned</param>
         [HttpGet]
-        [ProducesResponseType(typeof(List<Blog>), StatusCodes.Status200OK)]
-        public async Task<IResult> GetBlogs()
+        [ProducesResponseType(typeof(PaginatorDto<Blog>), StatusCodes.Status200OK)]
+        public async Task<IResult> GetBlogs(string searchNameTerm = "null", string sortBy = "createdAt",
+            string sortDirection = "desc", int pageNumber = 1, int pageSize = 10)
         {
-            var blogs = await _blogsRepository.GetBlogs();
+            var dto = new GetBlogsQueryDto(searchNameTerm, sortBy, sortDirection, pageNumber, pageSize);
+
+            var blogs = await _blogsRepository.GetBlogs(dto);
             return TypedResults.Ok(blogs);
         }
 
@@ -41,6 +56,41 @@ namespace MyWebAPI.Controllers
         {
             var blog = await _blogsService.AddBlog(dto);
             return blog is null ? TypedResults.BadRequest() : TypedResults.Created("", blog);
+        }
+
+        /// <summary>Returns all posts for specified blog</summary>
+        /// <param name="blogId">Id of existing blog</param>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDirection"></param>
+        /// <param name="pageNumber">pageNumber is number of portions that should be returned</param>
+        /// <param name="pageSize">pageSize is portions size that should be returned</param>
+        /// <response code="404">If specificied blog doesn't exist</response>
+        [HttpGet]
+        [Route("/blogs/{blogId}/posts")]
+        [ProducesResponseType(typeof(PaginatorDto<Blog>), StatusCodes.Status200OK)]
+        public async Task<IResult?> GetPostsForBlog(int blogId, string sortBy = "createdAt",
+            string sortDirection = "desc", int pageNumber = 1, int pageSize = 10)
+        {
+            var dto = new GetPostsQueryDto(sortBy, sortDirection, pageNumber, pageSize);
+
+            var posts = await _postsRepository.GetPostsForBlog(blogId, dto);
+            return posts != null ? TypedResults.Ok(posts) : TypedResults.NotFound();
+        }
+
+        /// <summary>Create new post for specific blog</summary>
+        /// <param name="blogId">Id of existing blog</param>
+        /// <response code="401">Unauthorized</response>
+        /// <response code="404">If specificied blog doesn't exist</response>
+        [HttpPost]
+        [Route("/blogs/{blogId}/posts")]
+        [BasicAuthorization]
+        [ValidateModel]
+        [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiErrorResultDto), StatusCodes.Status400BadRequest)]
+        public async Task<IResult?> CreatePostForBlog(int blogId, InputBlogPostDto dto)
+        {
+            var post = await _postsService.AddPostForBlog(blogId, dto);
+            return post is null ? TypedResults.NotFound() : TypedResults.Created("", post);
         }
 
         /// <summary>Returns blog by id</summary>

@@ -5,7 +5,7 @@ using MyWebAPI.Models.Posts;
 using MyWebAPI.Repositories.Interfaces;
 using MyWebAPI.Services.Interfaces;
 using MyWebAPI.Dto.Posts;
-using System.Text.Json;
+using MyWebAPI.Dto.Blogs;
 
 namespace MyWebAPI.Controllers
 {
@@ -23,11 +23,19 @@ namespace MyWebAPI.Controllers
         }
 
         /// <summary>Returns all posts</summary>
+        /// <param name="sortBy"></param>
+        /// <param name="sortDirection"></param>
+        /// <param name="pageNumber">pageNumber is number of portions that should be returned</param>
+        /// <param name="pageSize">pageSize is portions size that should be returned</param>
+
         [HttpGet]
-        [ProducesResponseType(typeof(List<Post>), StatusCodes.Status200OK)]
-        public async Task<IResult> GetPosts()
+        [ProducesResponseType(typeof(PaginatorDto<Post>), StatusCodes.Status200OK)]
+        public async Task<IResult> GetPosts(string sortBy = "createdAt",
+            string sortDirection = "desc", int pageNumber = 1, int pageSize = 10)
         {
-            var posts = await _postsRepository.GetPosts();
+            var dto = new GetPostsQueryDto(sortBy, sortDirection, pageNumber, pageSize);
+
+            var posts = await _postsRepository.GetPosts(dto);
             return TypedResults.Ok(posts);
         }
 
