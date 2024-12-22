@@ -1,10 +1,14 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using MyWebAPI.Dto;
 using MyWebAPI.Dto.Blogs;
 using MyWebAPI.Dto.Posts;
+using MyWebAPI.Dto.User;
 using MyWebAPI.Models.Blogs;
 using MyWebAPI.Models.Posts;
+using MyWebAPI.Models.User;
+using MyWebAPI.Repositories;
 
 namespace MyWebApiTests
 {
@@ -26,6 +30,49 @@ namespace MyWebApiTests
             }
 
             return blogs;
+        }
+
+        public static string GetAbsUrlWithQuery(string absUrl, SearchQueryDto dto)
+        {
+            var url = absUrl[..^1];
+
+            url += $"?pageSize={dto.PageSize}";
+            url += $"&pageNumber={dto.PageNumber}";
+            url += $"&sortBy={dto.SortBy}";
+            url += $"&sortDirection={dto.SortDirection}";
+
+            if (dto is GetBlogsQueryDto bDto) url += $"&searchNameTerm={bDto.SearchNameTerm}";
+
+            if (dto is GetUsersQueryDto uDto)
+            {
+                url += $"&searchLoginTerm={uDto.SearchLoginTerm}";
+                url += $"&searchEmailTerm={uDto.SearchEmailTerm}";
+            }
+
+            return url;
+        }
+
+        public static List<User> GetUsers(int count, PasswordService? service)
+        {
+            var users = new List<User>();
+
+            for (int i = 0; i < count; i++)
+            {
+                var dto = GetCorrectInputUserDto();
+
+                if (i > -1 && i < 5) dto = GetCorrectInputUserDto(login: "Super", email: "Mega");
+                if (i > 4 && i < 15) dto = GetCorrectInputUserDto(login: "Mega", email: "Super");
+                if (i > 15 && i < count) dto = GetCorrectInputUserDto(login: "Perfect", email: "Mega");
+
+                var data = service?.GenerateData(dto.Password);
+
+                var salt = data is null ? "salt" : data.Value.salt;
+                var hash = data is null ? "hash" : data.Value.hash;
+
+                users.Add(new(dto, salt, hash));
+            }
+
+            return users;
         }
 
         public static List<Post> GetPosts(int count, int blogId, string blogName)
@@ -51,6 +98,28 @@ namespace MyWebApiTests
             var website = $"https://{site}_{rnd.Next(1, 1000)}.com";
 
             return new InputBlogDto(bName, bDescription, website);
+        }
+        public static InputUserDto GetCorrectInputUserDto(string login = "Login", string pass = "Password",
+            string email = "email")
+        {
+            var rnd = new Random();
+
+            var uLogin = $"{login}_{rnd.Next(1, 1000)}";
+            var uPassword = $"{pass}_{rnd.Next(1, 1000)}";
+            var uEmail = $"https://{email}-{rnd.Next(1, 1000)}@test.com";
+
+            return new InputUserDto(uLogin, uPassword, uEmail);
+        }
+
+        public static InputUserDto GetIncorrectInputUserDto(string login = "Login", string pass = "Password",
+            string email = "email")
+        {
+            var rnd = new Random();
+
+            var uLogin = $"{login}_{rnd.Next(1, 1000)}";
+            var uPassword = $"{pass}_{rnd.Next(1, 1000)}";
+
+            return new InputUserDto() { Login = uLogin, Password = uPassword };
         }
 
         public static InputBlogDto GetIncorrectInputBlogDto()

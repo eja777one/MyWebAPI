@@ -85,6 +85,9 @@ builder.Services.AddTransient<IBlogsRepository, BlogsRepository>();
 builder.Services.AddTransient<IPostsService, PostsService>();
 builder.Services.AddTransient<IPostsRepository, PostsRepository>();
 builder.Services.AddSingleton<IBasicAuthService, BasicAuthService>();
+builder.Services.AddTransient<IUsersService, UsersService>();
+builder.Services.AddTransient<IUsersRepository, UsersRepository>();
+builder.Services.AddTransient<PasswordService, PasswordService>();
 
 
 builder.Services.AddAuthentication()

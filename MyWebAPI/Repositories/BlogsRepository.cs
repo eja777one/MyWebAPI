@@ -4,7 +4,6 @@ using MyWebAPI.Dto;
 using MyWebAPI.Dto.Blogs;
 using MyWebAPI.Extensions;
 using MyWebAPI.Models.Blogs;
-using MyWebAPI.Models.Posts;
 using MyWebAPI.Repositories.Interfaces;
 
 namespace MyWebAPI.Repositories
@@ -20,47 +19,32 @@ namespace MyWebAPI.Repositories
 
         public async Task<Blog?> AddBlog(Blog blog)
         {
-            try
-            {
-                await _context.Blogs.AddAsync(blog);
-                await _context.SaveChangesAsync();
-                return blog;
-            }
-            catch (Exception ex) { return null; }
+            await _context.Blogs.AddAsync(blog);
+            return await SaveChanges() ? blog : null;
         }
 
         public async Task<bool> DeleteBlog(int id)
         {
-            try
-            {
-                var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
-                if (blog is null) return false;
+            var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
+            if (blog is null) return false;
 
-                _context.Remove(blog);
+            _context.Remove(blog);
 
-                var posts = await _context.Posts.Where(p => p.BlogId == blog.Id).ToListAsync();
-                _context.RemoveRange(posts);
+            var posts = await _context.Posts.Where(p => p.BlogId == blog.Id).ToListAsync();
+            _context.RemoveRange(posts);
 
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex) { return false; }
+            return await SaveChanges();
         }
 
         public async Task<bool> DeleteAllBlogs()
         {
-            try
-            {
-                var blogs = await _context.Blogs.ToListAsync();
-                _context.Blogs.RemoveRange(blogs);
+            var blogs = await _context.Blogs.ToListAsync();
+            _context.Blogs.RemoveRange(blogs);
 
-                var posts = await _context.Posts.ToListAsync();
-                _context.RemoveRange(posts);
+            var posts = await _context.Posts.ToListAsync();
+            _context.RemoveRange(posts);
 
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex) { return false; }
+            return await SaveChanges();
         }
 
         public async Task<Blog?> GetBlog(int id)
@@ -72,7 +56,7 @@ namespace MyWebAPI.Repositories
         {
             var blogs = await _context.Blogs
                 .Where(x => x.Name.Contains(dto.SearchNameTerm))
-                .OrderByColumn(dto.SortBy, dto.SortDirection)                
+                .OrderByColumn(dto.SortBy, dto.SortDirection)
                 .ToListAsync();
 
             return new PaginatorDto<Blog>(blogs, dto);
@@ -90,13 +74,8 @@ namespace MyWebAPI.Repositories
 
         public async Task<List<Blog>?> AddBlogs(List<Blog> blogs)
         {
-            try
-            {
-                await _context.AddRangeAsync(blogs);
-                await _context.SaveChangesAsync();
-                return blogs;
-            }
-            catch (Exception ex) { return null; }
+            await _context.AddRangeAsync(blogs);
+            return await SaveChanges() ? blogs : null;
         }
     }
 }

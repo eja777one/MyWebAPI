@@ -72,11 +72,14 @@ namespace MyWebApiTests.E2e
                .Take(getPostsQuery2.PageSize)
                .ToList();
 
+            var query1 = TestData.GetAbsUrlWithQuery(_postsAbsUrl, getPostsQuery1);
+            var query2 = TestData.GetAbsUrlWithQuery(_postsAbsUrl, getPostsQuery2);
+
             // Act
-            var httpResponse3 = await _client.GetAsync($"{_postsAbsUrl.Substring(1)}?pageSize={getPostsQuery1.PageSize}&pageNumber={getPostsQuery1.PageNumber}&sortBy={getPostsQuery1.SortBy}&sortDirection={getPostsQuery1.SortDirection}");
+            var httpResponse3 = await _client.GetAsync(query1);
             var paginatorPosts3 = await httpResponse3.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
 
-            var httpResponse4 = await _client.GetAsync($"{_postsAbsUrl.Substring(1)}?pageSize={getPostsQuery2.PageSize}&pageNumber={getPostsQuery2.PageNumber}&sortBy={getPostsQuery2.SortBy}");
+            var httpResponse4 = await _client.GetAsync(query2);
             var paginatorPosts4 = await httpResponse4.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
 
             // Assert

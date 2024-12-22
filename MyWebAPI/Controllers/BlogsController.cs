@@ -124,7 +124,6 @@ namespace MyWebAPI.Controllers
 
         /// <summary>Delete blog specified by id</summary>
         /// <param name="id">Id of existing blog</param>
-        /// <response code="204">No content</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="404">Not Found</response>
         [HttpDelete]

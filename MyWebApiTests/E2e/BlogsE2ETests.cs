@@ -6,6 +6,7 @@ using MyWebAPI.Models.Posts;
 using MyWebAPI.Dto;
 using MyWebAPI.Dto.Posts;
 using MyWebAPI.Dto.Blogs;
+using MyWebAPI.Repositories;
 
 namespace MyWebApiTests.E2e
 {
@@ -75,11 +76,14 @@ namespace MyWebApiTests.E2e
 
             var httpResponse1 = await _client.SendAsync(requestMessage);
 
+            var query1 = TestData.GetAbsUrlWithQuery(_blogsAbsUrl, getBlogsQuery1);
+            var query2 = TestData.GetAbsUrlWithQuery(_blogsAbsUrl, getBlogsQuery2);
+
             // Act
-            var httpResponse2 = await _client.GetAsync($"{_blogsRelUrl.Substring(1)}?pageSize={getBlogsQuery1.PageSize}&pageNumber={getBlogsQuery1.PageNumber}&searchNameTerm={getBlogsQuery1.SearchNameTerm}&sortBy={getBlogsQuery1.SortBy}&sortDirection={getBlogsQuery1.SortDirection}");
+            var httpResponse2 = await _client.GetAsync(query1);
             var paginatorBlogs2 = await httpResponse2.Content.ReadFromJsonAsync<PaginatorDto<Blog>>();
 
-            var httpResponse3 = await _client.GetAsync($"{_blogsRelUrl.Substring(1)}?pageSize={getBlogsQuery2.PageSize}&pageNumber={getBlogsQuery2.PageNumber}&searchNameTerm={getBlogsQuery2.SearchNameTerm}&sortBy={getBlogsQuery2.SortBy}");
+            var httpResponse3 = await _client.GetAsync(query2);
             var paginatorBlogs3 = await httpResponse3.Content.ReadFromJsonAsync<PaginatorDto<Blog>>();
 
             // Assert
@@ -192,14 +196,18 @@ namespace MyWebApiTests.E2e
 
             var postUrl = _postsRelUrl.Substring(0, _postsRelUrl.Length - 1);
 
+            var query1 = TestData.GetAbsUrlWithQuery($"{_blogsRelUrl}{blog?.Id}{_postsRelUrl}", getPostsQuery1);
+            var query2 = TestData.GetAbsUrlWithQuery($"{_blogsRelUrl}{blog?.Id}{_postsRelUrl}", getPostsQuery2);
+            var query3 = TestData.GetAbsUrlWithQuery($"{_blogsRelUrl}999{_postsRelUrl}", getPostsQuery2);
+
             // Act
-            var httpResponse3 = await _client.GetAsync($"{_blogsRelUrl}{blog?.Id}{postUrl}?pageSize={getPostsQuery1.PageSize}&pageNumber={getPostsQuery1.PageNumber}&sortBy={getPostsQuery1.SortBy}&sortDirection={getPostsQuery1.SortDirection}");
+            var httpResponse3 = await _client.GetAsync(query1);
             var paginatorPosts3 = await httpResponse3.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
 
-            var httpResponse4 = await _client.GetAsync($"{_blogsRelUrl}{blog?.Id}{postUrl}?pageSize={getPostsQuery2.PageSize}&pageNumber={getPostsQuery2.PageNumber}&sortBy={getPostsQuery2.SortBy}");
+            var httpResponse4 = await _client.GetAsync(query2);
             var paginatorPosts4 = await httpResponse4.Content.ReadFromJsonAsync<PaginatorDto<Post>>();
 
-            var httpResponse5 = await _client.GetAsync($"{_blogsRelUrl}999{postUrl}?pageSize={getPostsQuery2.PageSize}&pageNumber={getPostsQuery2.PageNumber}&sortBy={getPostsQuery2.SortBy}");
+            var httpResponse5 = await _client.GetAsync(query3);
 
             // Assert
             Assert.Equal(HttpStatusCode.Created, httpResponse1?.StatusCode);

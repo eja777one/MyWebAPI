@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyWebAPI.Attributes;
 using MyWebAPI.Models.Blogs;
 using MyWebAPI.Models.Posts;
+using MyWebAPI.Models.User;
 using MyWebAPI.Repositories.Interfaces;
 
 namespace MyWebAPI.Controllers
@@ -12,13 +13,15 @@ namespace MyWebAPI.Controllers
         private readonly IVideoRepository _videoRepository;
         private readonly IBlogsRepository _blogsRepository;
         private readonly IPostsRepository _postsRepository;
+        private readonly IUsersRepository _usersRepository;
 
         public TestingController(IVideoRepository videoRepository, IBlogsRepository blogsRepository,
-            IPostsRepository postsRepository)
+            IPostsRepository postsRepository, IUsersRepository usersRepository)
         {
             _videoRepository = videoRepository;
             _blogsRepository = blogsRepository;
             _postsRepository = postsRepository;
+            _usersRepository = usersRepository;
         }
 
         /// <summary>Clear DB</summary>
@@ -31,6 +34,7 @@ namespace MyWebAPI.Controllers
             await _videoRepository.DeleteAllVideos();
             await _blogsRepository.DeleteAllBlogs();
             await _postsRepository.DeleteAllPosts();
+            await _usersRepository.DeleteAllUsers();
 
             return TypedResults.NoContent();
         }
@@ -57,6 +61,18 @@ namespace MyWebAPI.Controllers
         {
             var postsDb = await _postsRepository.AddPosts(posts);
             return postsDb is null ? TypedResults.BadRequest() : TypedResults.Ok();
+        }
+
+        /// <summary>Add posts</summary>
+        /// <response code="200">Ok</response>
+        /// <response code="400">Error</response>
+        [HttpPost]
+        [Route("/testing/users")]
+        [BasicAuthorization]
+        public async Task<IResult> AddUsers(List<User> users)
+        {
+            var usersDb = await _usersRepository.AddUsers(users);
+            return usersDb is null ? TypedResults.BadRequest() : TypedResults.Ok();
         }
     }
 }
